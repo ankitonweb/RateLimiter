@@ -9,23 +9,23 @@ debug.enabled = true;
 
 class RateLimiter extends RateLimiterBase {
     
-        dbStore: any;
+        #dbStore: any;
       
        
-        customKeyGenerator:any;
+        #customKeyGenerator:any;
 
-        keyGenerator=(req)=>{
-            if( !this.customKeyGenerator)
+        #keyGenerator=(req)=>{
+            if( !this.#customKeyGenerator)
                return req.ip;
              else
-               return this.customKeyGenerator(req);    
+               return this.#customKeyGenerator(req);    
        }
 
         constructor(opts = {}) {
              super(opts);
-             this.dbStore = Store(opts);
+             this.#dbStore = Store(opts);
              if ( opts.keyGenerator)
-                  this.customKeyGenerator =  opts.keyGenerator;
+                  this.#customKeyGenerator =  opts.keyGenerator;
         }
         /* 
          * Applying Sliding window with counter approach, keeping two timers t1 and t2 
@@ -38,7 +38,7 @@ class RateLimiter extends RateLimiterBase {
          *
          *  In this way we move our request limit with sliding window approach, we don't have to store each request's timestamp.
          * */
-        insertRecord=(key,req,resp,next)=>{
+        #insertRecord=(key,req,resp,next)=>{
             const currTimeStamp = moment().unix(); 
             var data = {
                 t1:currTimeStamp, 
@@ -47,22 +47,22 @@ class RateLimiter extends RateLimiterBase {
                 c2:0,
                 timeout: this.getDuration(), // This timeout will be used with Redis to set the key expiry timer
             };
-            this.dbStore.setData(key,data);
+            this.#dbStore.setData(key,data);
             //modify header 
             this.setHeaders(this.getMaxRequest()-1,req,resp);
             next();
          }
         rateLimit=(req,resp,next)=> {
-            let key = this.keyGenerator(req);
-            this.dbStore.getData(key).then(record =>{
-                                this.checkRecord(key,record,req,resp,next)
+            let key = this.#keyGenerator(req);
+            this.#dbStore.getData(key).then(record =>{
+                                this.#checkRecord(key,record,req,resp,next)
                         }).catch(_err=>{
-                                    this.insertRecord(key,req,resp,next)
+                                    this.#insertRecord(key,req,resp,next)
                         });                  
                         
         }
 
-        checkRecord=(key:string,record:any,req,resp,next)=>{
+        #checkRecord=(key:string,record:any,req,resp,next)=>{
             const currTimeStamp = moment().unix();
             let data = JSON.parse(record);
             let totalReqCount = data.c1 + data.c2;
@@ -75,7 +75,7 @@ class RateLimiter extends RateLimiterBase {
                         data.t2 = currTimeStamp;
                      }
                 }else {
-                   this.rejectRequest(req,resp);
+                   this.#rejectRequest(req,resp);
                    return;
                 }
 
@@ -89,11 +89,11 @@ class RateLimiter extends RateLimiterBase {
             }
             debug(`Updating db for ${key} => ${JSON.stringify(data)}`);
             this.setHeaders((this.getMaxRequest()- data.c1 -  data.c2),req,resp);
-            this.dbStore.updateData(key,data);
+            this.#dbStore.updateData(key,data);
             next();
         }
 
-        rejectRequest=(req,resp)=>{
+        #rejectRequest=(req,resp)=>{
             this.setHeaders((0),req,resp);
             this.sendErrorMessage(req,resp);
              
