@@ -1,0 +1,41 @@
+version: '3'
+services:
+  asterisk:
+    container_name: asterisk
+    image: docker.covi.io/coviu/coviu-asterisk:0.0.1-22-g45a249a
+    tty: true
+    ports:
+      - 9038:9038
+      - 9039:9039
+      - 5060:5060/udp
+      - 5060:5060/tcp
+      - 5061:5061
+      - 10000:10000/udp
+    environment:
+      - TERM=xterm
+    command: /usr/sbin/asterisk -T -U asterisk -p -vvvvvvdddddf
+    network_mode: bridge
+
+  bridge:
+    container_name: bridge
+    # image: docker.covi.io/coviu/bridge:0.0.1
+    build: .
+    tty: true
+    ports:
+      - 9071:9071
+    environment:
+      BRIDGE_HOST: ws://asterisk:9038/ws
+      # BRIDGE_HOST: ws://52.64.92.214:9038/ws
+      DEBUG: coviu*
+    depends_on:
+      - asterisk
+    network_mode: bridge
+    volumes:
+      - ./:/usr/src/app
+      - ./logs/:/var/log/coviu/
+      - /usr/src/app/node_modules
+    command: ['watch']
+    cap_add:
+      - SYS_NICE
+    links:
+      - asterisk
