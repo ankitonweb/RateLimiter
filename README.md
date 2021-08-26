@@ -52,29 +52,44 @@ In this approach we can keep track of each request per user/source. We can store
    ```
    There are some limitations of this approach as it expects the consistent traffic.
    
-   ```
    
-   ```
 
 ![image](https://user-images.githubusercontent.com/5471191/130944031-7c2b1e8c-722f-45fe-a94a-01e10fd7a44f.png)
 
 
 ## Implementation
   
-  - RateLimiter solution provides flexibility to choose custom `key Generator` and self managed database. We have provided the interface which can be use to implement any databse connecter and can easily be plugged into ratelimiter. 
-  - RateLimiter solution also provided flexibility to throttle the rate of request on the fly.
-  - 
-  - On using *redis dbconnector* we can utilize apply expiery timer for key stored in db. 
+  - **key Generator** .RateLimiter solution provides flexibility to generate unique key from http request. User can provide their custom keygenerators during api init with configuration. 
+   
+  -  **self managed database**. We have provided the interface which can be use to implement any databse connecter and can easily be plugged into ratelimiter. 
+  ```
+  export interface dbInterface {
+  +getData: (key: string) => Promise;
+  +setData: (key: string, data: string, callback: function) => void;
+  +removeData: (key: string) => void;
+  +updateData: (key: string, data: string, callback: function) => void;
+}
+  ```
+  - RateLimiter solution also provided flexibility to throttle the rate of request on the fly .
+  - On using *redis dbconnector* we can utilize key expiry timer feature of Redis key. 
+  - Multiple instance of apilimiter can be created, each object will maintain its own connection with DB.
+  - On using different DB connectors, we can manage the sharding and multi clustured db by implementing better partition key.
+ 
+       
 
   ### Interfaces and configuration 
   
   ```javascript
-     import RateLimiter from "RateLimiter"; 
-     const ratelimiter =  
+     const RateLimiter=require('RateLimiter'); 
+     const ratelimiter =  new RateLimiter(<configuration>); // Configuration objet as shown below
+     
   ```
+  ### Configuration
+  
+  In current implementation, we have provided inmemory dbconnector and redis dbconnector. For Inmemroy you don't have to provide anything, for redis you will have to pass the redis endpoint uri in the config as shown below.
   
   ```javascript
-  const ConfigForAuthenticated = {
+  const opts = {
       maxRequest: 1000,              // Maximum number of requests allowed within in [duration] time limit.
       endpoint: "",                 // endpoint url eg. redis:// , dynamo etc. Empty for Inmemory
       duration: 3600,               // Time window size in seconds, maxRequests allowed in this time window.
@@ -91,4 +106,61 @@ In this approach we can keep track of each request per user/source. We can store
 
 
 ## Example
+
+
+
+```
+const express = require("express");
+const RateLimiter=require('RateLimiter'); 
+const app = express();
+
+const opts = {
+      maxRequest: 1000,               
+      endpoint: "",                 
+      duration: 3600,               
+      endpointType: "inmemory",     
+      onConnectError: {},            
+      onConnect: {},                
+      keyGenerator: function (req) {                           
+        return req.ip;
+      },
+      headers: true,                 
+  };
+
+function Server(opts = {}, port = {}) {
+  var apiLimiter = new RateLimiter(opts);
+  app.use("/somepath/", apiLimiter.rateLimit);
+
+  app.get("/somepath/", (req, res) => {
+    res.send("Hello World!");
+  });
+  
+  port = port || 8000;
+  return new Promise((resolve, reject) => {
+    app.listen(port, () => {
+      return resolve(
+        `Application Server(with RateLimiter) Listening at  http://localhost:${port}\n with following options\n ${JSON.stringify(opts)}`
+      );
+    });
+  });
+}
+
+module.exports = (opts, port = {}) => {
+  return Server(opts, port)
+    .then((res) => {
+      console.log(res);
+      return res;
+    })
+    .catch((err) => {
+      console.log("Error in starting application server");
+      throw new Error("Can't start Application server " + err);
+    });
+};
+```
+
+**To throttle the rateLimit call** 
+```
+opts.maxRequest = 100;
+apiLimiter.throttleRateLimit(opts);
+```
 
