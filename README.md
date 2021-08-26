@@ -208,6 +208,14 @@ opts.maxRequest = 100;
 apiLimiter.throttleRateLimit(opts);
 ```
 
+## Example Scanarios Covered
+  We have added some sample test scenarios in *SimpleApplication* and *MixedScenarios*. They covers following scenarios
+  - Using different keyGenerators(IP and UserID)
+  - Using InMemory DB.
+  - Implementing throttling on the fly.
+  - Applying multiple RateLimit in single application. 
+
+
 ## Unit Test Coverered
   Currently very limited set of unit test cases is implmented 
   #### testDBStore 
@@ -221,10 +229,12 @@ apiLimiter.throttleRateLimit(opts);
   - It test different key generators ( IP & userID).
   - Sets some limit on the maxRequest and then pumps traffic and expect it to fail.
 
-   #### [Note] There are other functional areas which we could have added as unit test cases like
-         - Verifying that requests are allowed after timeout.
-         - Edge case scenarios, request comes just when window is about to expire.
-         - Applying multiple ratelimit ( with different path values) and verifying that they don't cross over each other.
-         - Test cases with different userIDs, currently we have just used single userID for test.
-         - Handling exceptions, this is something not verified very well in current release. Proper test case would surely help.
-         - Performance testing in heavy traffic conditions.
+   ### [Note] 
+   There are other functional areas which we could have added as unit test cases like
+   - Verifying that requests are allowed after timeout.
+   - Edge case scenarios, request comes just when window is about to expire.
+   - Applying multiple ratelimit ( with different path values) and verifying that they don't cross over each other.
+   - Test cases with different userIDs, currently we have just used single userID for test.
+   - Handling exceptions, this is something not verified very well in current release. Proper test case would surely help.
+   - Performance testing in heavy traffic conditions.
+ 
