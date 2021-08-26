@@ -14,14 +14,14 @@ class ApplicationServer {
   server: any;
   apiLimiter: any;
   apiLimiter2: any;
-  arrayOfLimiter: any;
+  
   constructor() {
-    this.arrayOfLimiter = new Array();
+   
   }
 
   applyRateLimiter = (opts, path = "/") => {
     this.config = opts;
-    this.apiLimiter = RateLimiter(opts);
+    this.apiLimiter = new RateLimiter(opts);
 
     app.use(path, this.apiLimiter.rateLimit);
 

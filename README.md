@@ -71,10 +71,10 @@ In this approach we can keep track of each request per user/source. We can store
        
    }
    
-   /*
-      In this approach [Te] will always modify the timestamp with the last request placed. 
-      In this way we can keep the rate of api requests a bit more consistent and control the spike in a better way.    
-   */
+   
+    In this approach [Te] will always modify the timestamp with the last request placed. 
+    In this way we can keep the rate of api requests a bit more consistent and control the spike in a better way.    
+   
    ```
    
   ***System Design Diagram*** 
@@ -109,21 +109,21 @@ In this approach we can keep track of each request per user/source. We can store
      npm install 
      
      [To build]
-     node run build
+     npm run build
      
      [To run unit tests]
-     node run test
+     npm run test
      
      [To run examples]
-     node run start
+     npm run start
   ```
   
   ### Interfaces and configuration 
   
   ```javascript
     
-     const RateLimiter = require('RateLimiter'); 
-     const ratelimiter = new RateLimiter(<configuration>); // Configuration objet as shown below
+    const RateLimiter = require('RateLimiter'); 
+    const ratelimiter = new RateLimiter(<configuration>); // Configuration objet as shown below
      
   ```
   
@@ -208,3 +208,23 @@ opts.maxRequest = 100;
 apiLimiter.throttleRateLimit(opts);
 ```
 
+## Unit Test Coverered
+  Currently very limited set of unit test cases is implmented 
+  #### testDBStore 
+  - This test checks the db interface.
+  - We have implemented 'inmemory' and 'redis' connector.
+  - Add/modify db entries.
+  - Connectivity with db.
+
+   #### testRateLimiter 
+  - This test checks the basic ratelimiter functionality.
+  - It test different key generators ( IP & userID).
+  - Sets some limit on the maxRequest and then pumps traffic and expect it to fail.
+
+   #### [Note] There are other functional areas which we could have added as unit test cases like
+         - Verifying that requests are allowed after timeout.
+         - Edge case scenarios, request comes just when window is about to expire.
+         - Applying multiple ratelimit ( with different path values) and verifying that they don't cross over each other.
+         - Test cases with different userIDs, currently we have just used single userID for test.
+         - Handling exceptions, this is something not verified very well in current release. Proper test case would surely help.
+         - Performance testing in heavy traffic conditions.

@@ -87,7 +87,8 @@ class RateLimiter extends RateLimiterBase {
                   data.t1 = temp_t2;
                   data.c1 = temp_c2;
             }
-            debug(`Updating db for ${key} => ${JSON.stringify(data)}`);
+            /* NOTE: Uncomment this log to see more detailed output */
+           // debug(`Updating db for ${key} => ${JSON.stringify(data)}`);
             this.setHeaders((this.getMaxRequest()- data.c1 -  data.c2),req,resp);
             this.#dbStore.updateData(key,data);
             next();

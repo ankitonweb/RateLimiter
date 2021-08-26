@@ -1,8 +1,6 @@
 /* @flow */
-import Server from './helper/server';
 import ApplicationServer from './helper/applicationServer'
 import { resolve } from 'path';
-const { assert, expect } = require('chai');
 const axios = require('axios');
 const debugLib = require('debug');
 const debug = debugLib('client:index');
@@ -18,7 +16,6 @@ var opts={
     onConnect: {},
     keyGenerator: function(req){
             return req.query.userid; 
-           // return req.ip;
     },
     headers: true,
   };
@@ -42,7 +39,7 @@ var applicationServer = ApplicationServer();
 
 async function sendTrafficWithUserID(maxCount){
         debug("\n\n\t\tNow sending Traffic with key as UserID\n\n");
-        debug(`[Current rateLimit is (${opts.maxRequest}). We are sending (${maxCount}) requests, so (${maxCount - opts.maxRequest}) request should Fail]`);
+        debug(`[Current rateLimit is (${opts.maxRequest}). We are sending (${maxCount}) requests, so (${maxCount - opts.maxRequest}) requests should Fail]`);
                 for(let i=1; i<=maxCount;i++)
                 {       
                       await  axios.get('http://localhost:8080/something/otherthing',  
@@ -78,18 +75,16 @@ async function sendTrafficWithUserID(maxCount){
                                 opts.maxRequest = 500;
                                 applicationServer.updateConfig(opts);
                         }    
-
-                });
-                       
+                });                       
         }
-
 
   }
 
 
-  async function sendTrafficWithIP(maxCount){
+
+async function sendTrafficWithIP(maxCount){
         debug("\n\n\t\tNow sending Traffic with key as IP Address\n\n");
-        debug(`[Current rateLimit is (${optsWithIP.maxRequest}). We are sending (${maxCount}) requests, so (${maxCount - optsWithIP.maxRequest}) request should Fail]`);
+        debug(`[Current rateLimit is (${optsWithIP.maxRequest}). We are sending (${maxCount}) requests, so (${maxCount - optsWithIP.maxRequest}) requests should Fail]`);
         for(let i=1; i<=maxCount;i++){               
               await  axios.get('http://localhost:8181/somethingnew')
                 .then(res => {})
@@ -102,13 +97,11 @@ async function sendTrafficWithUserID(maxCount){
 }
 
 
-
 async function sendMixedTraffic(maxCount,port,path){
         debug("\n\n\t\tNow sending Mixed Traffic with key as IP Address as well as User ID\n\n");
-        debug(`[Current rateLimit is (${optsWithIP.maxRequest}). We are sending (${maxCount}) requests, so (${maxCount - optsWithIP.maxRequest}) request should Fail]`);
         let lport=port;
         for(let i=1 ; i<=maxCount;i++){               
-              await  axios.put(`http://localhost:8888/somethingnew/whatelse`)
+              await  axios.put(`http://localhost:9292/somethingnew`)
                 .then(res => {})
                 .catch(err => {
                         debug(`[Error: Caught at request no ${i} with error message=>'${err.message}']`);     
@@ -119,39 +112,22 @@ async function sendMixedTraffic(maxCount,port,path){
 }
 
 
-function runMixedTraffic(){
-        optsWithIP.maxRequest = 100;
-        const port = 8888;
-        const path = '/somethingnew/whatelse';
-        const count = 10;
+//This is first test, it will call other tests once done.
 
-        applicationServer = ApplicationServer();
-       // applicationServer.applyRateLimiter(opts,'/');
-        applicationServer.applyMultipleRateLimiter(opts,'/login',optsWithIP,path);
-         applicationServer.start(port).then(result=>{
-                  debug(result);
-                  sendMixedTraffic(count,port,path).then(()=>{
-                      //  applicationServer.stop();
+function main(){
+      applicationServer.applyRateLimiter(opts,'/something/otherthing');
+       applicationServer.start(8080).then(result=>{
+        debug(result);
+        sendTrafficWithUserID(13).then(()=>{
+                 applicationServer.stop();
+                 runThrottleRateLimit();       
                 })
         });   
-};
-/*
- function runRateLimitWithIP(){
-        optsWithIP.maxRequest = 100;
-        applicationServer = ApplicationServer();
-        applicationServer.applyRateLimiter(opts,'/');
-        applicationServer.addMoreRateLimiter(optsWithIP,'/somethingnew');
-         applicationServer.start(8181).then(result=>{
-                  debug(result);
-                  sendTrafficWithIP(115).then(()=>{
-                        applicationServer.stop();
-                        runMixedTraffic();
-                })
-        });   
+
 };
 
-
- function  runThrottleRateLimit(){
+//Test 1
+function  runThrottleRateLimit(){
         opts.maxRequest = 10;
         applicationServer = ApplicationServer();
         applicationServer.applyRateLimiter(opts,'/something');
@@ -165,22 +141,40 @@ function runMixedTraffic(){
   
 };
 
-function main(){
-      applicationServer.applyRateLimiter(opts,'/something/otherthing');
-       applicationServer.start(8080).then(result=>{
-        debug(result);
-        sendTrafficWithUserID(13).then(()=>{
-                 applicationServer.stop();
-                 runThrottleRateLimit();       
+//Test 2
+function runRateLimitWithIP(){
+        optsWithIP.maxRequest = 100;
+        applicationServer = ApplicationServer();
+        applicationServer.applyRateLimiter(optsWithIP,'/somethingnew');
+         applicationServer.start(8181).then(result=>{
+                  debug(result);
+                  sendTrafficWithIP(115).then(()=>{
+                        applicationServer.stop();
+                        runMixedTraffic();
                 })
         });   
-
 };
-*/
 
-runMixedTraffic();
+//Test 3
+function runMixedTraffic(){
+        optsWithIP.maxRequest = 100;
+        const port = 9292;
+        const path = '/somethingnew';
+        const count = 10;
 
-//main();
+        applicationServer = ApplicationServer();
+        applicationServer.applyMultipleRateLimiter(opts,'/login',optsWithIP,path);
+         applicationServer.start(port).then(result=>{
+                  debug(result);
+                  sendMixedTraffic(count,port,path).then(()=>{
+                      applicationServer.stop();
+                })
+        });   
+};
+
+
+
+main();
 
 
 

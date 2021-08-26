@@ -61,6 +61,9 @@ describe("Test DBStore-Inmemory", () => {
   });
 });
 
+
+
+/* NOTE Comment out this test case if REDIS is not running locally */
 describe("Test DBStore-Redis", () => {
   var data = {
     t1: moment().unix(),
@@ -69,8 +72,21 @@ describe("Test DBStore-Redis", () => {
     c2: 0,
     timeout: opts.duration,
   };
-  opts.endpointType = "redis";
-  var dbStore = Store(opts);
+
+  const optsRedis = {
+    maxRequest: 5,
+    endpoint: "",   // Please don't forget to provide redis endpoint url
+    duration: 20,
+    endpointType: "redis",
+    onConnectError: {},
+    onConnect: {},
+    keyGenerator: function (req) {
+      return req.ip;
+    },
+    headers: true,
+  };
+   
+  var dbStore = Store(optsRedis);
   var ip1 = "10.100.1.140";
 
   dbStore.setData(ip1, data);
