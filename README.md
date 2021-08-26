@@ -6,16 +6,20 @@ Our Rate Limiter should meet the following requirements:
 ### Functional Requirements:
 
   - Limit the number of requests an entity can send to any application/API within a time window, e.g., 15 requests per second.
-  - Usually applications are designed to work in clusture mode, ratelimit should work in clusture mode.
+  - Ratelimit should be designed to work with applications running in clusture mode.
   - User should be notifed with an error message whenever the defined threshold is crossed.
-  - As the traffic condition changes, rate limit application should be able to adapt to the changed traffic conditions.  We should be able to throttle the rate limit on the fly without affecting services.
+  - Ratelimit should be able to adapt to the changed traffic conditions.  We should be able to throttle the rate limit on the fly without affecting services.
 
 ### Non-Functional Requirements:
 
   - The system should be highly available and scalable.
   - Our rate limiter should not introduce substantial latencies affecting the user experience.
 
-## Notes
+## Design
+
+
+
+![image](https://user-images.githubusercontent.com/5471191/130944031-7c2b1e8c-722f-45fe-a94a-01e10fd7a44f.png)
 
 
 ## Development
