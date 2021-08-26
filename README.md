@@ -39,7 +39,7 @@ In this approach we can keep track of each request per user/source. We can store
    
        [Note here we have only incremented the c2 we have not modified the timestamp c2] 
        
-   [4] Soon lot of request comes and we keep on incrementing counter c2 till the max count reaches
+   [4] Suddenly lot of request arrives and we keep on incrementing counter c2 till it touches the limit.
    
        [t1=1629977000, c1=1,t2=1629977010, c2=99] =>Request Allowed
        
@@ -53,37 +53,81 @@ In this approach we can keep track of each request per user/source. We can store
    There are some limitations of this approach as it expects the consistent traffic.
    
    
+   ### Sliding Window with Binary Search
+   
+   In this approach we divide the time limit into three segment (start,mid,end). We will keep an addtional counter and timestamp variable ( Cs, Ts, Cm, Tm, Ce, Te).
+   Idea is to identify where does current time fits into these three segment.
+   
+   ```javascript
+    
+   if( Cs - current_timestamp > maxTimeLimit/2){
+        Ce++;
+        Te = current_timestamp;
+   }else{
+        Cm++;
+        if( Tm == 0){ // Set only if not already assigned.
+            Tm = current_timestamp;
+        }
+       
+   }
+   
+   /*
+      In this approach [Te] will always modify the timestamp with the last request placed. 
+      In this way we can keep the rate of api requests a bit more consistent and control the spike in a better way.    
+   */
+   ```
+   
+  ***System Design Diagram*** 
+   
 
 ![image](https://user-images.githubusercontent.com/5471191/130944031-7c2b1e8c-722f-45fe-a94a-01e10fd7a44f.png)
 
 
 ## Implementation
   
-  - **key Generator** .RateLimiter solution provides flexibility to generate unique key from http request. User can provide their custom keygenerators during api init with configuration. 
+  - **Custom Key Generator** .RateLimiter solution provides flexibility to generate unique key from http request. User can provide their custom keygenerators during api init with configuration. 
    
-  -  **self managed database**. We have provided the interface which can be use to implement any databse connecter and can easily be plugged into ratelimiter. 
-  ```
+  -  **Custom DB Connectors**. We have provided the interface which can be use to implement any databse connecter and can easily be plugged into ratelimiter. 
+  ```javascript
   export interface dbInterface {
-  +getData: (key: string) => Promise;
-  +setData: (key: string, data: string, callback: function) => void;
-  +removeData: (key: string) => void;
-  +updateData: (key: string, data: string, callback: function) => void;
-}
+      +getData: (key: string) => Promise;
+      +setData: (key: string, data: string, callback: function) => void;
+      +removeData: (key: string) => void;
+      +updateData: (key: string, data: string, callback: function) => void;
+  }
   ```
   - RateLimiter solution also provided flexibility to throttle the rate of request on the fly .
-  - On using *redis dbconnector* we can utilize key expiry timer feature of Redis key. 
+  - On adding **redis dbconnector** we can utilize key expiry timer feature of Redis key. 
   - Multiple instance of apilimiter can be created, each object will maintain its own connection with DB.
   - On using different DB connectors, we can manage the sharding and multi clustured db by implementing better partition key.
  
-       
-
+  ### Build Steps
+  
+  ```javascript
+     git clone https://github.com/ankitonweb/RateLimiter
+     cd RateLimiter
+     npm install 
+     
+     [To build]
+     node run build
+     
+     [To run unit tests]
+     node run test
+     
+     [To run examples]
+     node run start
+  ```
+  
   ### Interfaces and configuration 
   
   ```javascript
-     const RateLimiter=require('RateLimiter'); 
-     const ratelimiter =  new RateLimiter(<configuration>); // Configuration objet as shown below
+    
+     const RateLimiter = require('RateLimiter'); 
+     const ratelimiter = new RateLimiter(<configuration>); // Configuration objet as shown below
      
   ```
+  
+  
   ### Configuration
   
   In current implementation, we have provided inmemory dbconnector and redis dbconnector. For Inmemroy you don't have to provide anything, for redis you will have to pass the redis endpoint uri in the config as shown below.
@@ -107,9 +151,9 @@ In this approach we can keep track of each request per user/source. We can store
 
 ## Example
 
+Create an object of RateLimiter and apply to the middleware of application.
 
-
-```
+```javascript
 const express = require("express");
 const RateLimiter=require('RateLimiter'); 
 const app = express();
@@ -159,7 +203,7 @@ module.exports = (opts, port = {}) => {
 ```
 
 **To throttle the rateLimit call** 
-```
+```javascript
 opts.maxRequest = 100;
 apiLimiter.throttleRateLimit(opts);
 ```
