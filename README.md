@@ -33,19 +33,28 @@ In this approach we can keep track of each request per user/source. We can store
    
    Lets say for example some application allows user to make 100 requests per hour..
    ```
-   [1] First Request arrives at 05:00:00 AM set [t1=currentTimeStamp(1629977000), c1=1, t2=0, c2=0] => Request Allowed
-   [2] Second Request arrives at 05:00:10 AM set [t1=1629977000, c1=1,t2=1629977010, c2=1] =>Request Allowed
-   [3] Third Request arrives at 05:01:00 AM set [t1=1629977000, c1=1,t2=1629977010, c2=2] =>Request Allowed 
+   [1] Request at 05:00:00 AM set [t1=1629977000, c1=1, t2=0, c2=0] => Request Allowed
+   [2] Request at 05:00:10 AM set [t1=1629977000, c1=1,t2=1629977010, c2=1] =>Request Allowed
+   [3] Request at 05:01:00 AM set [t1=1629977000, c1=1,t2=1629977010, c2=2] =>Request Allowed 
+   
        [Note here we have only incremented the c2 we have not modified the timestamp c2] 
-   [4] Soon lot of request comes and we keep on incrementing counter c2 till the max count reaches. 
+       
+   [4] Soon lot of request comes and we keep on incrementing counter c2 till the max count reaches
+   
        [t1=1629977000, c1=1,t2=1629977010, c2=99] =>Request Allowed
-   [5] 101th request comes at 05:45:00 AM and gets rejected [t1=1629977000, c1=1,t2=1629977010, c2=99] =>Request Rejected with 429
+       
+   [5] 101th request at 05:45:00 AM set [t1=1629977000, c1=1,t2=1629977010, c2=99] =>Request Rejected with 429
    [6] Once limit is reached, all the request placed within that time window will be rejected.
    [7] After timeout (1 hour), new request will be allowed and counter will be swapped. Now c1 will hold the counter of c2 and t1 will hold the timestamp of t2.
-   [8] New request arrives at 06:00:00 AM set  [t1=1629977010, c1=99,t2=1629980600, c2=1] =>Request Allowed 
-    As we can see from above soon the next request will be rejected ( because it crosses the max allowed limit). But it will soon be rolled over as in next 10 second window will move further. 
+   [8] Request at 06:00:00 AM set  [t1=1629977010, c1=99,t2=1629980600, c2=1] =>Request Allowed 
+    
+    As we can see from above soon the next request will be rejected ( because it crosses the max allowed limit). But it will soon be rolled over in next 10 second  as window will slide further. 
    ```
    There are some limitations of this approach as it expects the consistent traffic.
+   
+   ```
+   
+   ```
 
 ![image](https://user-images.githubusercontent.com/5471191/130944031-7c2b1e8c-722f-45fe-a94a-01e10fd7a44f.png)
 
