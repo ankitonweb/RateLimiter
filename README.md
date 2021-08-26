@@ -59,8 +59,36 @@ In this approach we can keep track of each request per user/source. We can store
 ![image](https://user-images.githubusercontent.com/5471191/130944031-7c2b1e8c-722f-45fe-a94a-01e10fd7a44f.png)
 
 
-## Development
+## Implementation
+  
+  - RateLimiter solution provides flexibility to choose custom `key Generator` and self managed database. We have provided the interface which can be use to implement any databse connecter and can easily be plugged into ratelimiter. 
+  - RateLimiter solution also provided flexibility to throttle the rate of request on the fly.
+  - 
+  - On using *redis dbconnector* we can utilize apply expiery timer for key stored in db. 
+
+  ### Interfaces and configuration 
+  
+  ```javascript
+     import RateLimiter from "RateLimiter"; 
+     const ratelimiter =  
+  ```
+  
+  ```javascript
+  const ConfigForAuthenticated = {
+      maxRequest: 1000,              // Maximum number of requests allowed within in [duration] time limit.
+      endpoint: "",                 // endpoint url eg. redis:// , dynamo etc. Empty for Inmemory
+      duration: 3600,               // Time window size in seconds, maxRequests allowed in this time window.
+      endpointType: "inmemory",     //  endpointType inmemory/redis/dynamo etc.
+      onConnectError: {},           // Optional for inmemory, good to have for redis and other db connectors
+      onConnect: {},                // Same as above.
+      keyGenerator: function (req) { // keyGenerator passed to RateLimiter, it counts the nunber of requests based on the key
+                                     //  return req.query.userid;  // We can customize the unique key comes with http request. For now we will just continue using ip.
+        return req.ip;
+      },
+      headers: true,                 // If true it appends the Rate limit information in header
+  };
+  ```
 
 
-## Configuration
+## Example
 
