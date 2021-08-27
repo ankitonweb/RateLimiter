@@ -2,7 +2,7 @@
 
 import InMemoryStore from "./inMemory";
 import { DBOptions } from "../types";
-import RedisStore from "./RedisStore";
+import RedisStore from "./redisStore";
 const debugLib = require("debug");
 const debug = debugLib("ratelimiter:db:dbstore");
 debug.enabled = true;
