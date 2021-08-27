@@ -73,6 +73,7 @@ In this approach we can keep track of each request per user/source. We can store
    
    
     In this approach [Te] will always modify the timestamp with the last request placed. 
+    After timeout, value of Tc,Cm will be copied to Ts, Cs, and value of Te, Ce will be copied to Tm, Cm. This will help us in identifying the rate of traffic post mid-intervel and pre mid-intervel. 
     In this way we can keep the rate of api requests a bit more consistent and control the spike in a better way.    
    
    ```
