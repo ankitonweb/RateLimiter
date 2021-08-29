@@ -55,26 +55,25 @@ In this approach we can keep track of each request per user/source. We can store
    
    ### Sliding Window with Binary Search ( Current implementation)
    
-   With Above approach, we have seen one draw back where request burst happens just before the Sliding window expiry and the timer t2 is set just after the second request recevied. This will give advantage to attackers and  doesn't seems to be an efficient way.
+   With Above approach, we have seen one draw back where request burst happens just before the *sliding window expiry* and the timer t2 is set just after the second request recevied. This will give advantage to attackers and  doesn't seems to be an efficient way.
 
-   We tried adding one more counter and dividing entier timline ( timeout) into three segments three segment (start,mid,end). We will keep an addtional counter and timestamp variable ( Cs, Ts, Cm, Tm, Ce, Te). While incrementing the counter we simply calculate where does currentTime stamp fits into the time segment mentioned above. 
+   Idea is to add one more counter and divide entier timeout window into three segments **(start,mid,end)**.  Keeping an addtional counter and timestamp variable
+  **( cs, ts, cm, tm, ce, te)**. While incrementing the counter we simply calculate where does currentTime stamp fits into the time segment mentioned above. 
    
-  
    #### Identifying the Segement
-   Applying Sliding window with Binary Search Tree approach, with three timer-counter tuple ts-cs,tm-cm,te-ce;
-   Each  segment will have their own counters which will keep the count of request within particular time range.
+   Each  segment will have their own counters which will keep the count of request falls within particular time range (ts-cs,tm-cm,te-ce).
    For example if duration/timeLimit=30 seconds then 
    Ts = currentTimeStamp+0;
    Tm = Ts+duration/2
    Te = Ts+duration;
 
-  - On first request timer ts will be set with current timestamp and  counter cs=1. 
-  - If Second request comes  currentTime < Tm , timer tm will be set to current time  and  cm=1.
-  - Any request comes within the currentTime < Tm,  counter cm will increase its count..
-  - If at any givin point of time cs+cm+ce > maxAllowed request, request will be rejected.
-  - If request comes within the currentTime >= Tm, timer  te and counter ce will be set.
-  - All subsequent request that falls into currentTime >=Tm and currentTime <=Te will simply increment the counter Ce
-  - If currtime > Te, we will simply slide the window. swapping values of ts < tm < te, cs < cm < ce 
+  - On arrival of  first request(Start Segment) timer *ts* will be set with current timestamp and  counter *cs=1*. 
+  - If Second request comes  *currentTime < Tm (Mid segement) , timer *tm* will be set to current time  and  *cm=1*.
+  - Any request that falls within the *currentTime < Tm* will be added to the counter *cm*.
+  - If at any givin point of time **cs+cm+ce > maxAllowed**, new request will be rejected.
+  - If request comes within the *currentTime >= Tm (End segment) * timer *te* and counter ce will be set.
+  - All subsequent request that falls into *currentTime >=Tm* and *currentTime <=Te* will simply increment the counter *Ce*
+  - If *currtime > Te*, we will simply move the window to the next time segment and swapping values of ts < tm < te, cs < cm < ce 
       
   In this way we can move our request limit with sliding window approach, we don't have to store each request's timestamp. 
   Also incrementing counter segmentwise will help in controlling the rate of rquests.
@@ -98,9 +97,6 @@ In this approach we can keep track of each request per user/source. We can store
       }
     }
 
-   
-   
-   
     In this approach [te] will always modify the timestamp with the last request placed. 
     After timeout, value of tm,cm will be pushed to ts, cs, and value of te, ce will be pushed to tm, tm. 
     This will help us in identifying the rate of traffic post mid-intervel and pre mid-intervel. 
