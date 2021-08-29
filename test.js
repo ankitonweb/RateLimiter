@@ -6,9 +6,9 @@ const app = express();
 debug.enabled = true;
 
 var ConfigForAuthenticated = {
-  maxRequest: 1000,              // Maximum number of requests allowed within in [duration] time limit.
+  maxRequest: 10,              // Maximum number of requests allowed within in [duration] time limit.
   endpoint: "",                 // endpoint url eg. redis:// , dynamo etc. Empty for Inmemory
-  duration: 3600,               // Time window size in seconds, maxRequests allowed in this time window.
+  duration: 300,               // Time window size in seconds, maxRequests allowed in this time window.
   endpointType: "inmemory",     //  endpointType inmemory/redis/dynamo etc.
   onConnectError: {},           // Optional for inmemory, good to have for redis and other db connectors
   onConnect: {},                // Same as above.
@@ -20,7 +20,7 @@ var ConfigForAuthenticated = {
 };
 
 var ConfigForGeneral = {
-  maxRequest: 100,
+  maxRequest: 10,
   endpoint: "",
   duration: 300,
   endpointType: "inmemory",
@@ -45,10 +45,10 @@ function SimpleApplication(optsGeneral = {}, optsAuth = {}, port = {}) {
      This will intercept all the request and check for 
      request limit for source (ip by default)
   */
-  app.use("/login", apiLimiterGeneral.rateLimit);
+  app.use("/", apiLimiterGeneral.rateLimit);
   app.use("/somepath/index", apiLimiterAuthenticated.rateLimit);
 
-  app.get("/login", (req, res) => {
+  app.get("/", (req, res) => {
     res.send(
       "Please enter your Login Details => [ Beware don't pump too much of traffic, we are monitoring !!]"
     );
@@ -79,7 +79,7 @@ SimpleApplication(ConfigForGeneral, ConfigForAuthenticated, 8000)
   .then((res) => {
     debug(res);
     debug("Setting timer to throttle ratelimit after 60 seconds");
-    setTimeout(() => throttleRateLimit(), 60000);
+ //   setTimeout(() => throttleRateLimit(), 60000);
     return res;
   })
   .catch((err) => {

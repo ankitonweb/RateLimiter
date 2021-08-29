@@ -3,7 +3,7 @@ const debugLib = require("debug");
 const debug = debugLib("ratelimiter:RateLimiterBase");
 debug.enabled = true;
 /*
-     [Algorithm: Sliding window with two counters and two timestamps ]
+     [Algorithm: Sliding window with BST ]
      
          header: if true, will add 'X-RateLimit' headers in the response.
        duration: Window size in  seconds    

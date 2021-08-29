@@ -22,8 +22,12 @@ const opts = {
 
 describe("Test RateLimiter", async () => {
 
-  let port=8888;
-  let localServer = Server(opts,port);
+  var port=8080;
+  var localServer; 
+  before( ()=> {
+    port=8888;
+    localServer = Server(opts,port);
+  });
 
   it("should be able to create RateLimiter Object", function (done) {
     http.get("http://localhost:8888", function (res) {
@@ -44,20 +48,27 @@ describe("Test RateLimiter", async () => {
 });
 
 describe("Test Different KeyGenerator", () => {
-  const port = 8100;
-  const optsUserID = {
-    maxRequest: 5,
-    endpoint: "",
-    duration: 20,
-    endpointType: "inmemory",
-    onConnectError: {},
-    onConnect: {},
-    keyGenerator: function (req) {
-      return req.query.userid;
-    },
-    headers: true,
-  };
-  let appServer = Server(optsUserID, port);
+  var port=8080;
+  var localServer; 
+  var optsUserID="";
+  before( ()=> {
+    port=8100;
+     optsUserID = {
+      maxRequest: 5,
+      endpoint: "",
+      duration: 20,
+      endpointType: "inmemory",
+      onConnectError: {},
+      onConnect: {},
+      keyGenerator: function (req) {
+        return req.query.userid;
+      },
+      headers: true,
+    };
+     localServer = Server(optsUserID, port);
+  });
+  
+
   it("should be able to create RateLimiter Object", function () {
     axios
       .get("http://localhost:" + port, {

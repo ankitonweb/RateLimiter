@@ -22,7 +22,7 @@ class InMemoryStore implements dbInterface {
     });
   };
 
-  setData = (key: string, data: any, setDataCallback) => {
+  setData = (key: string, data: any, timeout:number,setDataCallback) => {
     this.hashMap.set(key, JSON.stringify(data));
   };
 
@@ -30,7 +30,7 @@ class InMemoryStore implements dbInterface {
     this.hashMap.delete(key);
   };
 
-  updateData = (key: string, data: any, setDataCallback) => {
+  updateData = (key: string, data: any, timeout:number, setDataCallback) => {
     /* In case of Redis, we will refresh  the expiry of  key */
     this.hashMap.set(key, JSON.stringify(data));
   };

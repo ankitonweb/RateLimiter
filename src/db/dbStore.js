@@ -1,8 +1,8 @@
 /* @flow */
 
 import InMemoryStore from "./inMemory";
-import { DBOptions } from "../types";
 import RedisStore from "./redisStore";
+import { dbInterface } from "../types";
 const debugLib = require("debug");
 const debug = debugLib("ratelimiter:db:dbstore");
 debug.enabled = true;
@@ -31,6 +31,8 @@ class Store {
         debug("setting ['inmemory'] dbconnector");
         this.dbConnector = InMemoryStore();
         break;
+      default:
+          throw new Error(" Undefined endpointType type "+opts.endpointType);
     }
   }
 
@@ -43,8 +45,8 @@ class Store {
     });
   };
 
-  setData = (key: string, data: any) => {
-    this.dbConnector.setData(key, data, function (err) {
+  setData = (key: string, data: any,timeout:number) => {
+    this.dbConnector.setData(key, data, timeout,function (err) {
       if (err) {
         debug("Error in setting data");
         throw new Error(`Error in setting key=${key}, data=${data}  !`);
@@ -52,8 +54,8 @@ class Store {
     });
   };
 
-  updateData = (key: string, data: any) => {
-    this.dbConnector.updateData(key, data, function (err) {
+  updateData = (key: string, data: any, timeout:number) => {
+    this.dbConnector.updateData(key, data,timeout, function (err) {
       if (err) {
         debug("Error in setting data");
         throw new Error(`Error in setting key=${key}, data=${data} !`);

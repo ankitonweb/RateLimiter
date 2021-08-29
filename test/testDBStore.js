@@ -18,34 +18,36 @@ const opts = {
 
 describe("Test DBStore-Inmemory", () => {
   var data = {
-    t1: moment().unix(),
-    t2: 0,
-    c1: 1,
-    c2: 0,
-    timeout: opts.duration,
+    ts: moment().unix(),
+    tm: 0,
+    te: 0,
+    ce: 1,
+    cm: 0,
+    cs:1,
+    
   };
 
   var dbStore = Store(opts);
   var ip1 = "10.100.1.140";
 
-  dbStore.setData(ip1, data);
+  dbStore.setData(ip1, data,opts.duration);
 
   it("should be able to access the value stored in DB", function () {
     return dbStore.getData(ip1).then((resolve) => {
       var result = JSON.parse(resolve);
-      return expect(result.c1).equals(1);
+      return expect(result.cs).equals(1);
     });
   });
 
   it("should be able to modify existing data", function () {
-    dbStore.setData(ip1, data);
+    dbStore.setData(ip1, data,opts.duration);
     dbStore.getData(ip1).then((resolve) => {
       let ldata = JSON.parse(resolve);
-      ldata.c1++;
-      dbStore.setData(ip1, ldata);
+      ldata.cs++;
+      dbStore.setData(ip1, ldata,opts.duration);
       dbStore.getData(ip1).then((resolve) => {
         var result = JSON.parse(resolve);
-        return expect(result.c1).equals(ldata.c1);
+        return expect(result.cs).equals(ldata.cs);
       });
     });
   });
@@ -66,11 +68,12 @@ describe("Test DBStore-Inmemory", () => {
 /* NOTE Comment out this test case if REDIS is not running locally */
 describe("Test DBStore-Redis", () => {
   var data = {
-    t1: moment().unix(),
-    t2: 0,
-    c1: 1,
-    c2: 0,
-    timeout: opts.duration,
+    ts: moment().unix(),
+    tm: 0,
+    te: 0,
+    cs: 1,
+    cm: 0,
+    ce: 0,
   };
 
   const optsRedis = {
@@ -85,39 +88,43 @@ describe("Test DBStore-Redis", () => {
     },
     headers: true,
   };
-   
-  var dbStore = Store(optsRedis);
-  var ip1 = "10.100.1.140";
+  if( optsRedis.endpoint !== "")
+  { 
+      var dbStore = Store(optsRedis);
+      var ip1 = "10.100.1.140";
 
-  dbStore.setData(ip1, data);
+      dbStore.setData(ip1, data,opts.duration);
 
-  it("should be able to access the value stored in DB", function () {
-    return dbStore.getData(ip1).then((resolve) => {
-      var result = JSON.parse(resolve);
-      return expect(result.c1).equals(1);
-    });
-  });
+  
 
-  it("should be able to modify existing data", function () {
-    dbStore.setData(ip1, data);
-    dbStore.getData(ip1).then((resolve) => {
-      let ldata = JSON.parse(resolve);
-      ldata.c1++;
-      dbStore.setData(ip1, ldata);
-      dbStore.getData(ip1).then((resolve) => {
-        var result = JSON.parse(resolve);
-        return expect(result.c1).equals(ldata.c1);
+      it("should be able to access the value stored in DB", function () {
+        return dbStore.getData(ip1).then((resolve) => {
+          var result = JSON.parse(resolve);
+          return expect(result.cs).equals(1);
+        });
       });
-    });
-  });
 
-  it("should return empty if data not exist", function () {
-    var ip2 = "10.100.2.142";
-    dbStore
-      .getData(ip2)
-      .then((resolve) => {})
-      .catch((err) => {
-        return expect(err).equals("Data Not Found");
+      it("should be able to modify existing data", function () {
+        dbStore.setData(ip1, data,opts.duration);
+        dbStore.getData(ip1).then((resolve) => {
+          let ldata = JSON.parse(resolve);
+          ldata.cs++;
+          dbStore.setData(ip1, ldata,opts.duration);
+          dbStore.getData(ip1).then((resolve) => {
+            var result = JSON.parse(resolve);
+            return expect(result.cs).equals(ldata.cs);
+          });
+        });
       });
-  });
+
+      it("should return empty if data not exist", function () {
+        var ip2 = "10.100.2.142";
+        dbStore
+          .getData(ip2)
+          .then((resolve) => {})
+          .catch((err) => {
+            return expect(err).equals("Data Not Found");
+          });
+      });
+  } 
 });

@@ -1,5 +1,5 @@
-/dist-example/
-/dist/
+./dist-example
+./dist
 
 /node_modules
 .yarn/*

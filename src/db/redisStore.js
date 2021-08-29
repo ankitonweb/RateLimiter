@@ -3,7 +3,8 @@ import debugLib from "debug";
 const debug = debugLib("ratelimiter:db:redisstore");
 debug.enabled = true;
 const redis = require("redis");
-import dbInterface from "./redisStore.js";
+import { dbInterface } from "../types";
+
 
 class RedisStore implements dbInterface {
   constructor(opts = {}) {
@@ -22,18 +23,18 @@ class RedisStore implements dbInterface {
     });
   };
 
-  setData = (key, data: any, setDataCallback: function) => {
+  setData = (key, data: any, timeout:number,setDataCallback: function) => {
     this.client.set(key, JSON.stringify(data), setDataCallback); //, 'EX', data.timeout, setDataCallback);
-    this.client.expire(key, data.timeout);
+    this.client.expire(key, timeout);
   };
 
   removeData = (key, deleteCallback) => {
     this.client.del(key, deleteCallback);
   };
 
-  updateData = (key, data, setDataCallback) => {
+  updateData = (key, data, timeout:number, setDataCallback) => {
     this.client.set(key, JSON.stringify(data), setDataCallback);
-    this.client.expire(key, data.timeout);
+    this.client.expire(key, timeout);
     // this.client.set(key, JSON.stringify(data), 'EX', data.timeout, setDataCallback);
   };
 }

@@ -10,8 +10,6 @@ debug.enabled = true;
 class RateLimiter extends RateLimiterBase {
     
         #dbStore: any;
-      
-       
         #customKeyGenerator:any;
 
         #keyGenerator=(req)=>{
@@ -28,69 +26,95 @@ class RateLimiter extends RateLimiterBase {
                   this.#customKeyGenerator =  opts.keyGenerator;
         }
         /* 
-         * Applying Sliding window with counter approach, keeping two timers t1 and t2 
-         * 1. On first request timer t1 will be set with count c =1, 
-         * 2. Second request within range of timelimit will be stored in t2
-         * 3. Any request coming within the timelimit will just increment the counter t2.
-         * 4. If number of request exceeds allowed limit,all subsequent request will be rejected till timeout.
-         * 5. If currtime - t1 > timelimit , we will simply overwrite t1 and c1 counters with the value in t2 and c2
-         *    and setting t2 with current timestamp. 
+         * Applying Sliding window with Binary Search approach, keeping three timers ts,tm,te;
+         *  This algorithm is based on Sliding window + Binary search
+         *  In this case Time range is divided into three segment ts(starttime), tm( mid time), te(end time). 
+         *  Each  segment will have their own counters which will keep the count of request within particular time range.
+         *    
+         *  For example  if Duration is Duration=30 second then 
+         *  Ts = currentTimeStamp+0;
+         *  Tm = Ts+Duration/2
+         *  Te = Ts+Duration;
+         * 1. On first request timer ts will be set with current timestamp and  count cs=1, 
+         * 2. If Second request comes  currentTime < mid , tm will be set to current time  and  cm=1
+         * 3. Any request coming within the currentTime < Tm will just increment the counter cm.
+         * 4. If number of request exceeds allowed limit,all subsequent request(cs+cm+ce) will be rejected till timeout.
+         * 5. If request coming within the currentTime >= Tm will set te and c2
+         * 6. If currtime - te > duration , we will simply slide the window. swapping values of ts<tm<te, cs<cm<ce
          *
          *  In this way we move our request limit with sliding window approach, we don't have to store each request's timestamp.
          * */
         #insertRecord=(key,req,resp,next)=>{
             const currTimeStamp = moment().unix(); 
             var data = {
-                t1:currTimeStamp, 
-                t2:0,
-                c1:1,
-                c2:0,
-                timeout: this.getDuration(), // This timeout will be used with Redis to set the key expiry timer
+                ts:currTimeStamp,  //TimeStamp
+                cs:1,
+                tm:0,  
+                cm:0,
+                te:0,
+                ce:0,
             };
             this.#dbStore.setData(key,data);
-            //modify header 
-            this.setHeaders(this.getMaxRequest()-1,req,resp);
+            this.setHeaders(this.getMaxRequest()- data.cs -  data.cm -data.ce,req,resp);
             next();
-         }
+        }
+
         rateLimit=(req,resp,next)=> {
             let key = this.#keyGenerator(req);
             this.#dbStore.getData(key).then(record =>{
-                                this.#checkRecord(key,record,req,resp,next)
-                        }).catch(_err=>{
-                                    this.#insertRecord(key,req,resp,next)
-                        });                  
+                    this.#checkRecord(key,record,req,resp,next);
+                }).catch(_err=>{
+                    this.#insertRecord(key,req,resp,next);
+            });                  
                         
         }
 
         #checkRecord=(key:string,record:any,req,resp,next)=>{
             const currTimeStamp = moment().unix();
             let data = JSON.parse(record);
-            let totalReqCount = data.c1 + data.c2;
-            if( (currTimeStamp - data.t1 ) < this.getDuration() ){
-                //debug(" currTimeStamp timer t2");
-                if(  totalReqCount < this.getMaxRequest() ){
-                     data.c2 = data.c2 +1;
-                     //debug(" Increamenting timer t2");
-                     if( data.t2 == 0 ){
-                        data.t2 = currTimeStamp;
-                     }
+            let totalReqCount = data.cs + data.cm + data.ce;
+            
+            if( (currTimeStamp - data.ts ) < this.getDuration() ){
+                if(totalReqCount < this.getMaxRequest() ){
+                    if((currTimeStamp - data.ts ) <= this.getDuration()/2){       
+                        if(data.tm === 0){
+                            data.cm = 0;
+                            data.tm = currTimeStamp;  
+                            data.te = 0;
+                            data.ce = 0;
+                        }  
+                        data.cm++; 
+
+                    }else{
+                        data.ce++;  
+                        if(data.te === 0){
+                            data.te = currTimeStamp;     
+                        }  
+                    }
+                
                 }else {
                    this.#rejectRequest(req,resp);
                    return;
                 }
 
             }else{
-                  let temp_t2 = data.t2;
-                  let temp_c2 = data.c2;
-                  data.t2 = currTimeStamp;
-                  data.c2 = 1;
-                  data.t1 = temp_t2;
-                  data.c1 = temp_c2;
+                
+                data.ts = data.tm;
+                data.cs = data.cm;
+                data.tm = data.te;
+                data.cm = data.ce+1;
+                if( data.tm === 0 ){
+                    data.tm = currTimeStamp;
+                }
+                data.te = 0;
+                data.ce = 0;
+                 
+                  
             }
             /* NOTE: Uncomment this log to see more detailed output */
-           // debug(`Updating db for ${key} => ${JSON.stringify(data)}`);
-            this.setHeaders((this.getMaxRequest()- data.c1 -  data.c2),req,resp);
-            this.#dbStore.updateData(key,data);
+            //debug(`Updating db for ${key} => ${JSON.stringify(data)}, Remaining=${(this.getMaxRequest()- data.cs -  data.cm -data.ce)} `);
+            this.setHeaders((this.getMaxRequest()- data.cs -  data.cm -data.ce),req,resp);
+            this.#dbStore.updateData(key,data,this.getDuration());
             next();
         }
 
