@@ -88,13 +88,14 @@ describe("Test DBStore-Redis", () => {
     },
     headers: true,
   };
-   
-  var dbStore = Store(optsRedis);
-  var ip1 = "10.100.1.140";
+  if( optsRedis.endpoint !== "")
+  { 
+      var dbStore = Store(optsRedis);
+      var ip1 = "10.100.1.140";
 
-  dbStore.setData(ip1, data,opts.duration);
+      dbStore.setData(ip1, data,opts.duration);
 
-  if( optsRedis.endpoint !== ""){
+  
 
       it("should be able to access the value stored in DB", function () {
         return dbStore.getData(ip1).then((resolve) => {
