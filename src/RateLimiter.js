@@ -2,7 +2,7 @@
 const moment=require('moment');
 const debugLib = require('debug');
 const debug = debugLib('ratelimiter:RateLimiter');
-import Store from './db/DBStore';
+import Store from './db/dbStore';
 import RateLimiterBase from './RateLimiterBase';
 import {DBOptions} from './types';
 debug.enabled = true;
