@@ -39,7 +39,7 @@ var applicationServer = ApplicationServer();
 
 async function sendTrafficWithUserID(maxCount){
         debug("\n\n\t\tNow sending Traffic with key as UserID\n\n");
-        debug(`[Current rateLimit is (${opts.maxRequest}). We are sending (${maxCount}) requests, so (${maxCount - opts.maxRequest}) requests should Fail]`);
+        debug(`\n\n[Current rateLimit is (${opts.maxRequest}). We are sending (${maxCount}) requests, so (${maxCount - opts.maxRequest}) requests should Fail]\n\n`);
                 for(let i=1; i<=maxCount;i++)
                 {       
                       await  axios.get('http://localhost:8080/something/otherthing',  
@@ -59,7 +59,7 @@ async function sendTrafficWithUserID(maxCount){
 
   async function  throttleRateLimitWithUserID(maxCount){
         debug("\n\n\t\tNow sending traffic and throttle ratelimit on the fly\n\n");
-        debug(`[Current rateLimit is (${opts.maxRequest}). We are sending (${maxCount}) requests and will throttle at request number (${opts.maxRequest+1}) few inflight request will also fail. `);
+        debug(`\n\n[Current rateLimit is (${opts.maxRequest}). We are sending (${maxCount}) requests and will throttle at request number (${opts.maxRequest+1}) few inflight request will also fail.\n\n `);
         for(let i=1; i<=maxCount;i++)
         {       
               await  axios.get('http://localhost:8080/something',  
@@ -84,7 +84,7 @@ async function sendTrafficWithUserID(maxCount){
 
 async function sendTrafficWithIP(maxCount){
         debug("\n\n\t\tNow sending Traffic with key as IP Address\n\n");
-        debug(`[Current rateLimit is (${optsWithIP.maxRequest}). We are sending (${maxCount}) requests, so (${maxCount - optsWithIP.maxRequest}) requests should Fail]`);
+        debug(`[\n\nCurrent rateLimit is (${optsWithIP.maxRequest}). We are sending (${maxCount}) requests, so (${maxCount - optsWithIP.maxRequest}) requests should Fail]\n\n`);
         for(let i=1; i<=maxCount;i++){               
               await  axios.get('http://localhost:8181/somethingnew')
                 .then(res => {})
@@ -97,7 +97,7 @@ async function sendTrafficWithIP(maxCount){
 }
 
 
-async function sendMixedTraffic(maxCount,port,path){
+/*async function sendMixedTraffic(maxCount,port,path){
         debug("\n\n\t\tNow sending Mixed Traffic with key as IP Address as well as User ID\n\n");
         let lport=port;
         for(let i=1 ; i<=maxCount;i++){               
@@ -110,7 +110,7 @@ async function sendMixedTraffic(maxCount,port,path){
                         
         }
 }
-
+*/
 
 //This is first test, it will call other tests once done.
 
@@ -150,12 +150,12 @@ function runRateLimitWithIP(){
                   debug(result);
                   sendTrafficWithIP(115).then(()=>{
                         applicationServer.stop();
-                        runMixedTraffic();
+                        //runMixedTraffic();
                 })
         });   
 };
 
-//Test 3
+/*//Test 3
 function runMixedTraffic(){
         optsWithIP.maxRequest = 100;
         const port = 9292;
@@ -171,6 +171,7 @@ function runMixedTraffic(){
                 })
         });   
 };
+*/
 
 
 

@@ -27,7 +27,7 @@ In this approach we simply store the count of request and the start-time of the 
    ### Sliding Window
 In this approach we can keep track of each request per user/source. We can store the timestamp of each request in a hashTable/Redis/memcached/dynamodb other NOSQL based database.In this way we can restrict user to make only allowed number of request with-in particular time window. There is one big drawback, we might have keep appending the timestamp if the allowed number of request within given timeframe is high. This causes big memory/storage consumption also less scalable.
 
-   ### Sliding Window - With Counter ( Current implementation)
+   ### Sliding Window - With Counter 
    
    In this approach we reduce the need of extra memory required to keep track of additional timestamp by keeping only 2 timestamps(t1 & t2) and 2 counters(c1 & c2). 
    
@@ -53,30 +53,84 @@ In this approach we can keep track of each request per user/source. We can store
    There are some limitations of this approach as it expects the consistent traffic.
    
    
-   ### Sliding Window with Binary Search
+   ### Sliding Window with Binary Search ( Current implementation)
    
-   In this approach we divide the time limit into three segment (start,mid,end). We will keep an addtional counter and timestamp variable ( Cs, Ts, Cm, Tm, Ce, Te).
-   Idea is to identify where does current time fits into these three segment.
+   With Above approach, we have seen one draw back where request burst happens just before the Sliding window expiry and the timer t2 is set just after the second request recevied. This will give advantage to attackers and  doesn't seems to be an efficient way.
+
+   We tried adding one more counter and dividing entier timline ( timeout) into three segments three segment (start,mid,end). We will keep an addtional counter and timestamp variable ( Cs, Ts, Cm, Tm, Ce, Te). While incrementing the counter we simply calculate where does currentTime stamp fits into the time segment mentioned above. 
    
+  
+   #### Identifying the Segement
+   Applying Sliding window with Binary Search Tree approach, with three timer-counter tuple ts-cs,tm-cm,te-ce;
+   Each  segment will have their own counters which will keep the count of request within particular time range.
+   For example if duration/timeLimit=30 seconds then 
+   Ts = currentTimeStamp+0;
+   Tm = Ts+duration/2
+   Te = Ts+duration;
+
+  - On first request timer ts will be set with current timestamp and  counter cs=1. 
+  - If Second request comes  currentTime < Tm , timer tm will be set to current time  and  cm=1.
+  - Any request comes within the currentTime < Tm,  counter cm will increase its count..
+  - If at any givin point of time cs+cm+ce > maxAllowed request, request will be rejected.
+  - If request comes within the currentTime >= Tm, timer  te and counter ce will be set.
+  - All subsequent request that falls into currentTime >=Tm and currentTime <=Te will simply increment the counter Ce
+  - If currtime > Te, we will simply slide the window. swapping values of ts < tm < te, cs < cm < ce 
+      
+  In this way we can move our request limit with sliding window approach, we don't have to store each request's timestamp. 
+  Also incrementing counter segmentwise will help in controlling the rate of rquests.
+  
    ```javascript
-    
-   if( Cs - current_timestamp > maxTimeLimit/2){
-        Ce++;
-        Te = current_timestamp;
-   }else{
-        Cm++;
-        if( Tm == 0){ // Set only if not already assigned.
-            Tm = current_timestamp;
-        }
-       
-   }
+
+     
+    if(cs == 0){
+       cs=1;
+       ts=currentTime;
+    }else{
+      if( cs - current_timestamp > maxTimeLimit/2){
+        ce++;
+        if( te === 0)
+           te = current_timestamp;    
+      }else{
+        cm++;
+        if( tm == 0){ // Set only if not already assigned.
+            tm = current_timestamp;
+        }   
+      }
+    }
+
    
    
-    In this approach [Te] will always modify the timestamp with the last request placed. 
-    After timeout, value of Tc,Cm will be copied to Ts, Cs, and value of Te, Ce will be copied to Tm, Cm. 
+   
+    In this approach [te] will always modify the timestamp with the last request placed. 
+    After timeout, value of tm,cm will be pushed to ts, cs, and value of te, ce will be pushed to tm, tm. 
     This will help us in identifying the rate of traffic post mid-intervel and pre mid-intervel. 
     In this way we can keep the rate of api requests a bit more consistent and control the spike in a better way.    
    
+   ```
+
+  Lets say for example some application allows user to make 100 requests per Hour..data set will look like this
+   ```
+   [1] Request at 05:00:00 AM set [ts=1629977000, cs=1, tm=0, cm=0, te=0, ce=0] => Request Allowed
+   [2] Request at 05:00:10 AM set [ts=1629977000, cs=1, tm=1629977010, cm=1,te=0, ce=0] =>Request Allowed
+   [3] Request at 05:01:00 AM set [ts=1629977000, cs=1, tm=1629977010, cm=2, te=0, ce=0] =>Request Allowed 
+   
+      Note here we have only incremented the cm we have not modified the timestamp tm
+           
+   [4] Suddenly lot of request(48) arrives between 05:01:00 and 05:30:00 and we keep on incrementing counter cm.
+   
+       [ts=1629977000, cs=1, tm=1629977010, cm=50, te=0, ce=0]=>Request Allowed
+
+   [5] Request at 05:31:00 AM set [ts=1629977000, cs=1, tm=1629977010, cm=50, te=1629978800, ce=1] =>Request Allowed 
+   
+      Becasue current time > Tm, timer te and counter ce will be set.   
+       
+   [5] 101th request at 05:45:00 AM set [ts=1629977000, cs=1,  tm=1629977010, cm=50, te=1629978800, ce=48] =>Request Rejected with 429
+   [6] Once limit is reached, all the request placed within that time window will be rejected.
+   [7] After timeout (1 hour), new request will be allowed and counter will be swapped. Now cs will store the counter of cm and ts will store the timestamp of tm
+       similarly cm will store the counter of ce and tm will store the counter of te. te will be set to currenttime stamp and ce=1
+   [8] Request at 06:00:00 AM set  [ts=1629977010, cs=50,  tm=1629978800, cm=48, te=0, ce=0] =>Request Allowed 
+    
+    As we can see from above soon the next request will be rejected ( because it crosses the max allowed limit). But it will soon be rolled over in next 10 second  as window will slide further. 
    ```
    
   ***System Design Diagram*** 

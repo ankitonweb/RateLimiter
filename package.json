@@ -57,7 +57,7 @@
     "transpile": "babel ./src  --out-dir dist && babel ./examples --out-dir dist-example",
     "clean": "rm -rf dist-example/ dist/",
     "watch:dev": "nodemon --legacy-watch",
-    "test": "mocha --require @babel/register --exit",
+    "test": "npm run clean && npm run transpile && mocha --require @babel/register --exit",
     "kill": "kill $(lsof -t -i:9071) | exit 0"
   },
   "version": "0.0.1",
