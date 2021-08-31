@@ -272,6 +272,14 @@ apiLimiter.throttleRateLimit(opts);
   - Using InMemory DB.
   - Implementing throttling on the fly.
   - Applying multiple RateLimit in single application. 
+  
+  ```javascript
+  To execute example 
+  
+  node ./dist-example/SlidingWindowWithBS.js
+  node ./dist-example/MixedScenarios.js
+  
+  ```
 
 
 ## Unit Test Coverered
