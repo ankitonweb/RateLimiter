@@ -21,4 +21,5 @@ export interface dbInterface {
   +setData: (key: string, data: string, callback: function) => void;
   +removeData: (key: string) => void;
   +updateData: (key: string, data: string, callback: function) => void;
-}
+};
+

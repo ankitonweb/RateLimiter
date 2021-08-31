@@ -21,6 +21,7 @@ class RateLimiter extends RateLimiterBase {
 
         constructor(opts = {}) {
              super(opts);
+             
              this.#dbStore = Store(opts);
              if ( opts.keyGenerator)
                   this.#customKeyGenerator =  opts.keyGenerator;

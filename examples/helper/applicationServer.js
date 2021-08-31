@@ -4,9 +4,15 @@ const http = require("http");
 import RateLimiter from "../../dist/RateLimiter";
 const debugLib = require("debug");
 const debug = debugLib("applicationServer");
+
 debug.enabled = true;
 
 const app = express();
+
+
+
+
+
 
 class ApplicationServer {
   config: any;
@@ -35,6 +41,8 @@ class ApplicationServer {
 
     this.server = http.createServer(app);
   };
+
+
 
   applyMultipleRateLimiter = (opts1, path1, opts2, path2) => {
     this.config = opts1;
