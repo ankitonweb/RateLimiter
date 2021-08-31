@@ -145,16 +145,15 @@ In this approach we can keep track of each request per user/source. We can store
    
   -  **Custom DB Connectors**. We have provided the interface which can be use to implement any databse connecter and can easily be plugged into ratelimiter. 
   ```javascript
-  export interface dbInterface {
+    export interface dbInterface {
       +getData: (key: string) => Promise;
       +setData: (key: string, data: string, callback: function) => void;
       +removeData: (key: string) => void;
       +updateData: (key: string, data: string, callback: function) => void;
-  }
+      }
+
   
-  For example 
-  
-  class InMemoryStore implements dbInterface {
+    class InMemoryStore implements dbInterface {
         hashMap: any;
         constructor() {
           this.hashMap = new Map();
@@ -181,10 +180,10 @@ In this approach we can keep track of each request per user/source. We can store
           /* In case of Redis, we will refresh  the expiry of  key */
           this.hashMap.set(key, JSON.stringify(data));
         };
-};
+      };
   
-  Object of dbConnector can be injected  to RateLimiter along with other config as describe in following sections.
   ```
+  - Object of dbConnector can be injected  to RateLimiter along with other config as describe in following sections.
   - RateLimiter solution also provided flexibility to throttle the rate of request on the fly .
   - On adding **redis dbconnector** we can utilize key expiry timer feature of Redis key. 
   - Multiple instance of apilimiter can be created, each object will maintain its own connection with DB.
