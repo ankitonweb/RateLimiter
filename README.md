@@ -201,6 +201,7 @@ In this approach we can keep track of each request per user/source. We can store
         return req.ip;
       },
       headers: true,                 // If true it appends the Rate limit information in header
+       dbConnector: new InMemoryStore(),  // Injecting userdefined dbConnector
   };
   ```
 
@@ -224,7 +225,8 @@ const opts = {
       keyGenerator: function (req) {                           
         return req.ip;
       },
-      headers: true,                 
+      headers: true, 
+      dbConnector: new InMemoryStore(),                
   };
 
 function Server(opts = {}, port = {}) {
